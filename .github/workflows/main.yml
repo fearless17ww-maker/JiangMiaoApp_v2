@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # 允许你在 GitHub 网页上手动点击按钮触发打包
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. 配置 Python 环境
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. 安装依赖 (flet 和 certifi)
+      - name: Install Dependencies
+        run: |
+          pip install flet certifi
+
+      # 4. 配置 Java 环境 (Android 构建需要)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 5. 配置 Flutter 环境 (Flet 底层基于 Flutter)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      # 6. 开始打包 APK (关键步骤)
+      # 注意：这里不需要写 --icon，它会自动去 assets 文件夹找 icon.png
+      - name: Build APK
+        run: |
+          flet build apk --project "JiangMiaoApp" --product "JiangMiao" --org "com.jiangmiao.habit" --verbose
+
+      # 7. 上传打包好的 APK 供下载
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/apk/app-release.apk
